@@ -7,15 +7,34 @@ list(REMOVE_DUPLICATES FreeRTOS_FIND_COMPONENTS)
 
 set(FreeRTOS_HEAPS 1 2 3 4 5)
 
-if(NOT FREERTOS_PATH)
-    set(FREERTOS_PATH /opt/FreeRTOS CACHE PATH "Path to FreeRTOS")
-    message(STATUS "No FREERTOS_PATH specified using default: ${FREERTOS_PATH}")
+load_from_environment(FREERTOS_PATH)
+
+if(NOT FREERTOS_PATH OR NOT EXISTS "${FREERTOS_PATH}")
+    message(STATUS "No FREERTOS_PATH specified. Looking after Git Submodule stm32_mw_freertos otherwise cloning.")
+
+    load_from_environment(FREERTOS_GIT_URL)
+    load_from_environment(FREERTOS_GIT_TAG)
+    if(NOT FREERTOS_GIT_URL AND NOT FREERTOS_GIT_TAG)
+        load_git_submodule(other stm32_mw_freertos Source FREERTOS_PATH)
+    endif()
+
+    if (NOT FREERTOS_PATH)
+        if(FREERTOS_GIT_URL)
+            git_clone(${FREERTOS_GIT_URL} other "${FREERTOS_GIT_TAG}" include FREERTOS_PATH)
+        else()
+            git_clone_st(other stm32_mw_freertos "${FREERTOS_GIT_TAG}" Source FREERTOS_PATH)
+        endif()
+    endif()
+
+    if (FREERTOS_PATH)
+        message("Submodule path: ${FREERTOS_PATH}")
+    endif()
 endif()
 
 find_path(FreeRTOS_COMMON_INCLUDE
     NAMES FreeRTOS.h
     PATHS "${FREERTOS_PATH}" "${FREERTOS_PATH}/FreeRTOS" 
-    PATH_SUFFIXES  "Source/include"
+    PATH_SUFFIXES  "Source/include" "include"
     NO_DEFAULT_PATH
 )
 list(APPEND FreeRTOS_INCLUDE_DIRS "${FreeRTOS_COMMON_INCLUDE}")
@@ -23,7 +42,7 @@ list(APPEND FreeRTOS_INCLUDE_DIRS "${FreeRTOS_COMMON_INCLUDE}")
 find_path(FreeRTOS_SOURCE_DIR
     NAMES tasks.c
     PATHS "${FREERTOS_PATH}" "${FREERTOS_PATH}/FreeRTOS" 
-    PATH_SUFFIXES  "Source"
+    PATH_SUFFIXES  "Source" "."
     NO_DEFAULT_PATH
 )
 if(NOT (TARGET FreeRTOS))
@@ -72,7 +91,7 @@ foreach(PORT ${FreeRTOS_FIND_COMPONENTS})
     find_path(FreeRTOS_${PORT}_PATH
         NAMES portmacro.h
         PATHS "${FREERTOS_PATH}" "${FREERTOS_PATH}/FreeRTOS" 
-        PATH_SUFFIXES "Source/portable/GCC/${PORT}"  "Source/portable/GCC/${PORT}/r0p1"
+        PATH_SUFFIXES "Source/portable/GCC/${PORT}"  "Source/portable/GCC/${PORT}/r0p1" "portable/GCC/${PORT}" "portable/GCC/${PORT}/r0p1"
         NO_DEFAULT_PATH
     )
     list(APPEND FreeRTOS_INCLUDE_DIRS "${FreeRTOS_${PORT}_PATH}")

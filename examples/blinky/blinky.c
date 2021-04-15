@@ -19,6 +19,13 @@
     #define LED_PORT                GPIOD
     #define LED_PIN                 GPIO_PIN_12
     #define LED_PORT_CLK_ENABLE     __HAL_RCC_GPIOD_CLK_ENABLE
+#elif defined STM32H7
+    #include <stm32h7xx_hal.h>
+
+    // STM32F4-Discovery green led - PD12
+    #define LED_PORT                GPIOB
+    #define LED_PIN                 GPIO_PIN_0
+    #define LED_PORT_CLK_ENABLE     __HAL_RCC_GPIOB_CLK_ENABLE
 #endif
 
 void SysTick_Handler(void)
@@ -26,7 +33,7 @@ void SysTick_Handler(void)
     HAL_IncTick();
 
     // 1 Hz blinking
-    if ((HAL_GetTick() % 500) == 0)
+    if ((HAL_GetTick() % 100) == 0)
         HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
 }
 

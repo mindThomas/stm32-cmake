@@ -7,7 +7,10 @@ if(STM32H7 IN_LIST CMSIS_FIND_COMPONENTS)
 endif()
 list(REMOVE_DUPLICATES CMSIS_FIND_COMPONENTS)
 
+message("CMSIS Components to find: ${CMSIS_FIND_COMPONENTS}")
+
 include(stm32/devices)
+include(git_submodule)
 
 function(cmsis_generate_default_linker_script FAMILY DEVICE CORE)
     if(CORE)
@@ -39,49 +42,185 @@ function(cmsis_generate_default_linker_script FAMILY DEVICE CORE)
     add_custom_target(CMSIS_LD_${DEVICE}${CORE_U} DEPENDS "${OUTPUT_LD_FILE}")
     add_dependencies(CMSIS::STM32::${DEVICE}${CORE_C} CMSIS_LD_${DEVICE}${CORE_U})
     stm32_add_linker_script(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE "${OUTPUT_LD_FILE}")
-endfunction() 
+endfunction()
+
+function(cmsis_generate_openocd_config FAMILY DEVICE CORE)
+    find_program(OPENOCD_BIN "openocd")
+    if(NOT OPENOCD_BIN)
+        return()
+    endif()
+    get_filename_component(OPENOCD_PATH ${OPENOCD_BIN} DIRECTORY)
+    get_filename_component(OPENOCD_PATH ${OPENOCD_PATH} DIRECTORY)
+
+    if(CORE)
+        set(CORE_C "::${CORE}")
+        set(CORE_U "_${CORE}")
+    endif()
+
+    string(TOLOWER ${FAMILY} FAMILY_L)
+#    find_file(OPENOCD_TARGET_CFG
+#            NAMES stm32${FAMILY_L}x.cfg
+#            PATHS "${OPENOCD_PATH}/scripts/target"
+#            NO_DEFAULT_PATH
+#            )
+
+    if(EXISTS "${OPENOCD_PATH}/scripts/target/stm32${FAMILY_L}x.cfg")
+        set(OPENOCD_TARGET_CFG stm32${FAMILY_L}x.cfg)
+    elseif(EXISTS "${OPENOCD_PATH}/scripts/target/stm32${FAMILY_L}.cfg")
+        set(OPENOCD_TARGET_CFG stm32${FAMILY_L}.cfg)
+    else()
+        return()
+    endif()
+
+    #set(OPENOCD_OUTPUT_CFG "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_openocd.cfg")
+    set(OPENOCD_OUTPUT_CFG "${CMAKE_CURRENT_BINARY_DIR}/OPENOCD_${DEVICE}${CORE_U}.cfg")
+    add_custom_command(OUTPUT "${OPENOCD_OUTPUT_CFG}"
+            COMMAND ${CMAKE_COMMAND}
+            -DOPENOCD_CFG="${OPENOCD_OUTPUT_CFG}"
+            -DOPENOCD_TARGET_CFG="${OPENOCD_TARGET_CFG}"
+            -DDEVICE="${DEVICE}"
+            -DCORE="${CORE_U}"
+            -P "${STM32_CMAKE_DIR}/stm32/openocd_cfg.cmake"
+            )
+
+    add_custom_target(OPENOCD_${DEVICE}${CORE_U} DEPENDS "${OPENOCD_OUTPUT_CFG}")
+    add_dependencies(CMSIS::STM32::${DEVICE}${CORE_C} OPENOCD_${DEVICE}${CORE_U})
+    #stm32_add_linker_script(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE "${OUTPUT_LD_FILE}")
+
+    #define_property(TARGET PROPERTY DEVICE BRIEF_DOCS "Device name" FULL_DOCS "Device name")
+    #set_property(TARGET CMSIS::STM32::${DEVICE}${CORE_C} PROPERTY DEVICE ${DEVICE})
+
+    #get_filename_component(SCRIPT "${SCRIPT}" ABSOLUTE)
+    #target_link_options(${TARGET} ${VISIBILITY} -T "${SCRIPT}")
+    #set_property(TARGET CMSIS::STM32::${DEVICE}${CORE_C} PROPERTY OPENOCD "${OPENOCD_OUTPUT_CFG}")
+
+endfunction()
+
+function(load_from_environment VARIABLE)
+    if(NOT ${VARIABLE} AND DEFINED ENV{${VARIABLE}})
+        set(${VARIABLE} $ENV{${VARIABLE}} PARENT_SCOPE)
+    endif()
+endfunction()
 
 foreach(COMP ${CMSIS_FIND_COMPONENTS})
     string(TOLOWER ${COMP} COMP_L)
     string(TOUPPER ${COMP} COMP)
     
-    string(REGEX MATCH "^STM32([A-Z][0-9])([0-9A-Z][0-9][A-Z][0-9A-Z])?_?(M[47])?.*$" COMP ${COMP})
+    string(REGEX MATCH "^STM32([A-Z][0-9])([0-9A-Z][0-9])?([A-Z][0-9A-Z])?_?(M[47])?.*$" COMP ${COMP})
     
     if((NOT CMAKE_MATCH_1) AND (NOT CMAKE_MATCH_2))
         message(FATAL_ERROR "Unknown CMSIS component: ${COMP}")
     endif()
-    
-    if(CMAKE_MATCH_2)
-        set(FAMILY ${CMAKE_MATCH_1})
-        set(DEVICES "${CMAKE_MATCH_1}${CMAKE_MATCH_2}")
+
+    set(FAMILY ${CMAKE_MATCH_1})
+    if(CMAKE_MATCH_2 AND CMAKE_MATCH_3)
+        set(DEVICES "${FAMILY}${CMAKE_MATCH_2}${CMAKE_MATCH_3}")
+    elseif(CMAKE_MATCH_2)
+        stm32_get_devices_by_family(DEVICES FAMILY ${FAMILY})
+        message("REGEX=${FAMILY}${CMAKE_MATCH_2}..")
+        list(FILTER DEVICES INCLUDE REGEX "${FAMILY}${CMAKE_MATCH_2}..")
+        message("DEVICES=${DEVICES}")
     else()
-        set(FAMILY ${CMAKE_MATCH_1})
-        stm32_get_devices_by_family(DEVICES FAMILY ${FAMILY} CORE ${CORE})
+        stm32_get_devices_by_family(DEVICES FAMILY ${FAMILY})
     endif()
     
-    if(CMAKE_MATCH_3)
-        set(CORE ${CMAKE_MATCH_3})
+    if(CMAKE_MATCH_4)
+        set(CORE ${CMAKE_MATCH_4})
         set(CORE_C "::${CORE}")
+        set(CORE_D "::${CORE}")
         set(CORE_U "_${CORE}")
+        message("Loading FAMILY=${FAMILY}, DEVICES=${DEVICES}, CORE=${CORE}")
     else()
         unset(CORE)
         unset(CORE_C)
+        unset(CORE_D)
         unset(CORE_U)
+        message("Loading FAMILY=${FAMILY}, DEVICES=${DEVICES}")
     endif()
-    
+
+    # If no core is specified, make sure that the DEVICES do not need the core to be specified
+    if(NOT CORE)
+        stm32_get_cores(FAMILY_CORES FAMILY ${FAMILY})
+        if(FAMILY_CORES)
+            # The family includes devices with multiple cores and thus the CORE would have to be specified for those devices
+            # If only a single device is specified and it contains just a single core, just that as the default
+            list(LENGTH DEVICES NUM_DEVICES)
+            if(${NUM_DEVICES} EQUAL 1)
+                stm32_get_cores(DEVICE_CORES FAMILY ${FAMILY} DEVICE ${DEVICES})
+                list(LENGTH DEVICE_CORES NUM_CORES)
+                if(${NUM_CORES} EQUAL 1)
+                    set(CORE_D "::${DEVICE_CORES}")
+                else()
+                    message(FATAL_ERROR "Missing CORE specification for ${COMP}")
+                endif()
+            elseif(NOT CMAKE_MATCH_3)
+                stm32_get_cores(DEVICE_CORES FAMILY ${FAMILY} DEVICE "${FAMILY}${CMAKE_MATCH_2}xx" TYPE "${FAMILY}${CMAKE_MATCH_2}xx")
+                list(LENGTH DEVICE_CORES NUM_CORES)
+                if(${NUM_CORES} EQUAL 1)
+                    set(CORE_D "::${DEVICE_CORES}")
+                else()
+                    message(FATAL_ERROR "Missing CORE specification for ${COMP}")
+                endif()
+            endif()
+        endif()
+    endif()
+
     string(TOLOWER ${FAMILY} FAMILY_L)
-    
-    if((NOT STM32_CMSIS_${FAMILY}_PATH) AND (NOT STM32_CUBE_${FAMILY}_PATH))
-        set(STM32_CUBE_${FAMILY}_PATH /opt/STM32Cube${FAMILY} CACHE PATH "Path to STM32Cube${FAMILY}")
-        message(STATUS "Neither STM32_CUBE_${FAMILY}_PATH nor STM32_CMSIS_${FAMILY}_PATH specified using default  STM32_CUBE_${FAMILY}_PATH: ${STM32_CUBE_${FAMILY}_PATH}")
+
+    load_from_environment(STM32_CMSIS_${FAMILY}_PATH)
+    load_from_environment(STM32_CUBE_${FAMILY}_PATH)
+    load_from_environment(STM32_CMSIS_PATH)
+    if((NOT STM32_CMSIS_${FAMILY}_PATH) AND (NOT STM32_CUBE_${FAMILY}_PATH) OR
+       (NOT EXISTS "${STM32_CMSIS_${FAMILY}_PATH}") AND (NOT EXISTS "${STM32_CUBE_${FAMILY}_PATH}"))
+        string(TOLOWER CMSIS_DEVICE_${FAMILY} SUBMODULE_FOLDER)
+        message(STATUS "Neither STM32_CUBE_${FAMILY}_PATH nor STM32_CMSIS_${FAMILY}_PATH specified. Looking after Git Submodule '${SUBMODULE_FOLDER}' otherwise cloning.")
+
+        load_from_environment(STM32_CMSIS_${FAMILY}_GIT_URL)
+        load_from_environment(STM32_CMSIS_${FAMILY}_GIT_TAG)
+        if(NOT STM32_CMSIS_${FAMILY}_GIT_URL AND NOT STM32_CMSIS_${FAMILY}_GIT_TAG)
+            load_git_submodule(cmsis ${SUBMODULE_FOLDER} Include STM32_CMSIS_${FAMILY}_PATH)
+        endif()
+
+        if (NOT STM32_CMSIS_${FAMILY}_PATH)
+            if(STM32_CMSIS_${FAMILY}_GIT_URL)
+                git_clone(${STM32_CMSIS_${FAMILY}_GIT_URL} cmsis "${STM32_CMSIS_${FAMILY}_GIT_TAG}" Include STM32_CMSIS_${FAMILY}_PATH)
+            else()
+                git_clone_st(cmsis ${SUBMODULE_FOLDER} "${STM32_CMSIS_${FAMILY}_GIT_TAG}" Include STM32_CMSIS_${FAMILY}_PATH)
+            endif()
+        endif()
+
+        if (STM32_CMSIS_${FAMILY}_PATH)
+            message("Submodule path: ${STM32_CMSIS_${FAMILY}_PATH}")
+        endif()
     endif()
-        
+
+    if(NOT STM32_CMSIS_PATH OR NOT EXISTS "${STM32_CMSIS_PATH}")
+        load_from_environment(STM32_CMSIS_GIT_URL)
+        load_from_environment(STM32_CMSIS_GIT_TAG)
+        if(NOT STM32_CMSIS_GIT_URL AND NOT STM32_CMSIS_GIT_TAG)
+            load_git_submodule(cmsis cmsis_core Include STM32_CMSIS_PATH)
+        endif()
+
+        if (NOT STM32_CMSIS_PATH)
+            if(STM32_CMSIS_GIT_URL)
+                git_clone(${STM32_CMSIS_GIT_URL} cmsis "${STM32_CMSIS_GIT_TAG}" Include STM32_CMSIS_PATH)
+            else()
+                git_clone_st(cmsis cmsis_core "${STM32_CMSIS_GIT_TAG}" Include STM32_CMSIS_PATH)
+            endif()
+        endif()
+
+        if (STM32_CMSIS_PATH)
+            message("Submodule path: ${STM32_CMSIS_PATH}")
+        endif()
+    endif()
+
     find_path(CMSIS_${FAMILY}${CORE_U}_CORE_PATH
         NAMES Include/cmsis_gcc.h
         PATHS "${STM32_CMSIS_PATH}" "${STM32_CUBE_${FAMILY}_PATH}/Drivers/CMSIS"
         NO_DEFAULT_PATH
     )
     if (NOT CMSIS_${FAMILY}${CORE_U}_CORE_PATH)
+        message("Did not find CMSIS_${FAMILY}${CORE_U}_CORE_PATH")
         continue()
     endif()
 	
@@ -120,17 +259,19 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS})
         NO_DEFAULT_PATH
     )
     list(APPEND CMSIS_SOURCES "${CMSIS_${FAMILY}${CORE_U}_SOURCE}")
-    
+
     if (NOT CMSIS_${FAMILY}${CORE_U}_SOURCE)
         continue()
     endif()
 
     if(NOT (TARGET CMSIS::STM32::${FAMILY}${CORE_C}))
         add_library(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE IMPORTED)
-        target_link_libraries(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE STM32::${FAMILY}${CORE_C})
+        list(APPEND CMSIS_LIBRARIES "CMSIS::STM32::${FAMILY}${CORE_C}")
+        target_link_libraries(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE STM32::${FAMILY}${CORE_D})
         target_include_directories(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_CORE_PATH}/Include")
         target_include_directories(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_PATH}/Include")
         target_sources(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_SOURCE}")
+        message("Adding generic library CMSIS::STM32::${FAMILY}${CORE_C}")
     endif()
 
     set(DEVICES_FOUND TRUE)
@@ -138,6 +279,10 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS})
         stm32_get_cores(DEV_CORES FAMILY ${FAMILY} DEVICE ${DEVICE})
         if(CORE AND (NOT ${CORE} IN_LIST DEV_CORES))
             continue()
+        endif()
+
+        if(DEV_CORES AND (NOT CORE_D))
+            message(FATAL_ERROR "Missing CORE specification for ${COMP}")
         endif()
                 
         stm32_get_chip_type(${FAMILY} ${DEVICE} TYPE)
@@ -157,13 +302,18 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS})
         
         if(NOT (TARGET CMSIS::STM32::${TYPE}${CORE_C}))
             add_library(CMSIS::STM32::${TYPE}${CORE_C} INTERFACE IMPORTED)
-            target_link_libraries(CMSIS::STM32::${TYPE}${CORE_C} INTERFACE CMSIS::STM32::${FAMILY}${CORE_C} STM32::${TYPE}${CORE_C})
+            list(APPEND CMSIS_LIBRARIES "CMSIS::STM32::${TYPE}${CORE_C}")
+            target_link_libraries(CMSIS::STM32::${TYPE}${CORE_C} INTERFACE CMSIS::STM32::${FAMILY}${CORE_C} STM32::${TYPE}${CORE_D})
             target_sources(CMSIS::STM32::${TYPE}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_${TYPE}_STARTUP}")
+            message("Adding library CMSIS::STM32::${TYPE}${CORE_C} with startup file")
         endif()
         
         add_library(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE IMPORTED)
+        list(APPEND CMSIS_LIBRARIES "CMSIS::STM32::${DEVICE}${CORE_C}")
         target_link_libraries(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE CMSIS::STM32::${TYPE}${CORE_C})
         cmsis_generate_default_linker_script(${FAMILY} ${DEVICE} "${CORE}")
+        cmsis_generate_openocd_config(${FAMILY} ${DEVICE} "${CORE}")
+        message("Adding library CMSIS::STM32::${DEVICE}${CORE_C} with startup and linker file")
     endforeach()
 
     if(DEVICES_FOUND)
@@ -173,11 +323,12 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS})
     endif()
     list(REMOVE_DUPLICATES CMSIS_INCLUDE_DIRS)
     list(REMOVE_DUPLICATES CMSIS_SOURCES)
+    list(REMOVE_DUPLICATES CMSIS_LIBRARIES)
 endforeach()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(CMSIS
-    REQUIRED_VARS CMSIS_INCLUDE_DIRS CMSIS_SOURCES
+    REQUIRED_VARS CMSIS_INCLUDE_DIRS CMSIS_SOURCES CMSIS_LIBRARIES
     FOUND_VAR CMSIS_FOUND
     VERSION_VAR CMSIS_VERSION
     HANDLE_COMPONENTS
