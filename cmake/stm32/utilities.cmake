@@ -16,17 +16,23 @@ function(stm32_util_create_family_targets FAMILY)
         target_compile_options(STM32::${FAMILY}${CORE_C} INTERFACE 
             --sysroot="${TOOLCHAIN_SYSROOT}"
             -mthumb -mabi=aapcs -Wall -ffunction-sections -fdata-sections -fno-strict-aliasing -fno-builtin -ffast-math
-            $<$<CONFIG:Debug>:-Og>
-            $<$<CONFIG:Release>:-Os>
+            -fno-common -fmessage-length=0
+            #$<$<CONFIG:Debug>:-Og>
+            #$<$<CONFIG:Release>:-Os>
         )
         target_link_options(STM32::${FAMILY}${CORE_C} INTERFACE 
             --sysroot="${TOOLCHAIN_SYSROOT}"
-            -mthumb -mabi=aapcs -Wl,--gc-sections
-            $<$<CONFIG:Debug>:-Og>
-            $<$<CONFIG:Release>:-Os -s>
+            -mthumb #-mthumb-interwork
+            -mabi=aapcs
+            -Wl,--gc-sections,--print-memory-usage
+            -Wl,--start-group -lc -lm -Wl,--end-group
+            #$<$<CONFIG:Debug>:-Og>
+            #$<$<CONFIG:Release>:-Os -s>
         )
         target_compile_definitions(STM32::${FAMILY}${CORE_C} INTERFACE 
             STM32${FAMILY}
+            ARM_MATH_MATRIX_CHECK
+            ARM_MATH_ROUNDING
         )
     endif()
     foreach(TYPE ${STM32_${FAMILY}_TYPES})

@@ -33,7 +33,7 @@ function(stm32_add_flash_target TARGET)
     if(OPENOCD_BIN)
         get_filename_component(OPENOCD_PATH ${OPENOCD_BIN} DIRECTORY)
         get_filename_component(OPENOCD_PATH ${OPENOCD_PATH} DIRECTORY)
-        message("OpenOCD path: ${OPENOCD_PATH}")
+        #message("OpenOCD path: ${OPENOCD_PATH}")
 
         get_openocd_config_name_for_target(${TARGET} OPENOCD_CFG_NAME)
         if(NOT OPENOCD_CFG_NAME)
@@ -41,7 +41,7 @@ function(stm32_add_flash_target TARGET)
         endif()
 
         set(OPENOCD_CFG "${CMAKE_CURRENT_BINARY_DIR}/${OPENOCD_CFG_NAME}")
-        message("OpenOCD config file: ${OPENOCD_CFG}")
+        #message("OpenOCD config file: ${OPENOCD_CFG}")
 #        add_custom_command(OUTPUT "${OPENOCD_CFG}"
 #                COMMAND ${CMAKE_COMMAND}
 #                -DOPENOCD_CFG="${OPENOCD_CFG}"

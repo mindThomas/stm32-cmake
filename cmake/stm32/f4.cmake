@@ -27,3 +27,7 @@ target_compile_options(STM32::F4 INTERFACE
 target_link_options(STM32::F4 INTERFACE 
     -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 )
+target_compile_definitions(STM32::F4 INTERFACE
+    __FPU_PRESENT=1
+    ARM_MATH_CM4
+)

@@ -12,3 +12,24 @@ find_program(CMAKE_GDB NAMES ${STM32_TARGET_TRIPLET}-gdb PATHS ${TOOLCHAIN_BIN_P
 set(CMAKE_EXECUTABLE_SUFFIX_C   .elf)
 set(CMAKE_EXECUTABLE_SUFFIX_CXX .elf)
 set(CMAKE_EXECUTABLE_SUFFIX_ASM .elf)
+
+# Build type
+if(CMAKE_BUILD_TYPE STREQUAL "")
+    unset(CMAKE_BUILD_TYPE CACHE) # no ambiguity
+endif()
+set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "RelWithDebInfo, Release or Debug")
+
+# Add compile flags according to build mode
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    message(STATUS "Maximum optimization for speed")
+    add_compile_options(-Ofast)
+elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+    message(STATUS "Maximum optimization for speed, debug info included")
+    add_compile_options(-Ofast -g)
+elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "MinSizeRel")
+    message(STATUS "Maximum optimization for size")
+    add_compile_options(-Os)
+else ()
+    message(STATUS "Minimal optimization, debug info included")
+    add_compile_options(-Og -g)
+endif ()

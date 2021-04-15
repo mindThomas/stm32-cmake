@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.13)
-
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/stm32.cmake)
 
 project(stm32-freertos C ASM)

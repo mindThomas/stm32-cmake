@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/stm32_gcc.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/stm32.cmake)
 
 project(stm32-fetch-cube C ASM)
 

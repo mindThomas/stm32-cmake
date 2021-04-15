@@ -25,7 +25,13 @@ function(cmsis_generate_default_linker_script FAMILY DEVICE CORE)
     stm32_get_memory_info(FAMILY ${FAMILY} DEVICE ${DEVICE} CORE ${CORE} CCRAM SIZE CCRAM_SIZE ORIGIN CCRAM_ORIGIN)
     stm32_get_memory_info(FAMILY ${FAMILY} DEVICE ${DEVICE} CORE ${CORE} HEAP SIZE HEAP_SIZE)
     stm32_get_memory_info(FAMILY ${FAMILY} DEVICE ${DEVICE} CORE ${CORE} STACK SIZE STACK_SIZE)
-    
+
+#    if(CORE)
+#        message("FAMILY=${FAMILY}, DEVICE=${DEVICE}, CORE=${CORE}, FLASH=${FLASH_SIZE}")
+#    else()
+#        message("FAMILY=${FAMILY}, DEVICE=${DEVICE}, FLASH=${FLASH_SIZE}")
+#    endif()
+
     add_custom_command(OUTPUT "${OUTPUT_LD_FILE}"
         COMMAND ${CMAKE_COMMAND} 
             -DFLASH_ORIGIN="${FLASH_ORIGIN}" 
@@ -44,7 +50,7 @@ function(cmsis_generate_default_linker_script FAMILY DEVICE CORE)
     stm32_add_linker_script(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE "${OUTPUT_LD_FILE}")
 endfunction()
 
-function(cmsis_generate_openocd_config FAMILY DEVICE CORE)
+function(cmsis_generate_openocd_config FAMILY CONFIG_NAME DEPENDENCY_TO)
     find_program(OPENOCD_BIN "openocd")
     if(NOT OPENOCD_BIN)
         return()
@@ -52,9 +58,9 @@ function(cmsis_generate_openocd_config FAMILY DEVICE CORE)
     get_filename_component(OPENOCD_PATH ${OPENOCD_BIN} DIRECTORY)
     get_filename_component(OPENOCD_PATH ${OPENOCD_PATH} DIRECTORY)
 
-    if(CORE)
-        set(CORE_C "::${CORE}")
-        set(CORE_U "_${CORE}")
+    if(TARGET OPENOCD_${CONFIG_NAME})
+        add_dependencies(${DEPENDENCY_TO} OPENOCD_${CONFIG_NAME})
+        return()
     endif()
 
     string(TOLOWER ${FAMILY} FAMILY_L)
@@ -72,19 +78,19 @@ function(cmsis_generate_openocd_config FAMILY DEVICE CORE)
         return()
     endif()
 
+    message("Adding OpenOCD config OPENOCD_${CONFIG_NAME} as dependency to ${DEPENDENCY_TO}")
+
     #set(OPENOCD_OUTPUT_CFG "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_openocd.cfg")
-    set(OPENOCD_OUTPUT_CFG "${CMAKE_CURRENT_BINARY_DIR}/OPENOCD_${DEVICE}${CORE_U}.cfg")
+    set(OPENOCD_OUTPUT_CFG "${CMAKE_CURRENT_BINARY_DIR}/OPENOCD_${CONFIG_NAME}.cfg")
     add_custom_command(OUTPUT "${OPENOCD_OUTPUT_CFG}"
             COMMAND ${CMAKE_COMMAND}
             -DOPENOCD_CFG="${OPENOCD_OUTPUT_CFG}"
             -DOPENOCD_TARGET_CFG="${OPENOCD_TARGET_CFG}"
-            -DDEVICE="${DEVICE}"
-            -DCORE="${CORE_U}"
             -P "${STM32_CMAKE_DIR}/stm32/openocd_cfg.cmake"
             )
 
-    add_custom_target(OPENOCD_${DEVICE}${CORE_U} DEPENDS "${OPENOCD_OUTPUT_CFG}")
-    add_dependencies(CMSIS::STM32::${DEVICE}${CORE_C} OPENOCD_${DEVICE}${CORE_U})
+    add_custom_target(OPENOCD_${CONFIG_NAME} DEPENDS "${OPENOCD_OUTPUT_CFG}")
+    add_dependencies(${DEPENDENCY_TO} OPENOCD_${CONFIG_NAME})
     #stm32_add_linker_script(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE "${OUTPUT_LD_FILE}")
 
     #define_property(TARGET PROPERTY DEVICE BRIEF_DOCS "Device name" FULL_DOCS "Device name")
@@ -93,7 +99,6 @@ function(cmsis_generate_openocd_config FAMILY DEVICE CORE)
     #get_filename_component(SCRIPT "${SCRIPT}" ABSOLUTE)
     #target_link_options(${TARGET} ${VISIBILITY} -T "${SCRIPT}")
     #set_property(TARGET CMSIS::STM32::${DEVICE}${CORE_C} PROPERTY OPENOCD "${OPENOCD_OUTPUT_CFG}")
-
 endfunction()
 
 function(load_from_environment VARIABLE)
@@ -271,6 +276,7 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS})
         target_include_directories(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_CORE_PATH}/Include")
         target_include_directories(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_PATH}/Include")
         target_sources(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_SOURCE}")
+        cmsis_generate_openocd_config(${FAMILY} "${FAMILY}${CORE_U}" "CMSIS::STM32::${FAMILY}${CORE_C}")
         message("Adding generic library CMSIS::STM32::${FAMILY}${CORE_C}")
     endif()
 
@@ -305,6 +311,7 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS})
             list(APPEND CMSIS_LIBRARIES "CMSIS::STM32::${TYPE}${CORE_C}")
             target_link_libraries(CMSIS::STM32::${TYPE}${CORE_C} INTERFACE CMSIS::STM32::${FAMILY}${CORE_C} STM32::${TYPE}${CORE_D})
             target_sources(CMSIS::STM32::${TYPE}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_${TYPE}_STARTUP}")
+            cmsis_generate_openocd_config(${FAMILY} "${FAMILY}${CORE_U}"  "CMSIS::STM32::${TYPE}${CORE_C}")
             message("Adding library CMSIS::STM32::${TYPE}${CORE_C} with startup file")
         endif()
         
@@ -312,7 +319,7 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS})
         list(APPEND CMSIS_LIBRARIES "CMSIS::STM32::${DEVICE}${CORE_C}")
         target_link_libraries(CMSIS::STM32::${DEVICE}${CORE_C} INTERFACE CMSIS::STM32::${TYPE}${CORE_C})
         cmsis_generate_default_linker_script(${FAMILY} ${DEVICE} "${CORE}")
-        cmsis_generate_openocd_config(${FAMILY} ${DEVICE} "${CORE}")
+        cmsis_generate_openocd_config(${FAMILY} "${FAMILY}${CORE_U}"  "CMSIS::STM32::${DEVICE}${CORE_C}")
         message("Adding library CMSIS::STM32::${DEVICE}${CORE_C} with startup and linker file")
     endforeach()
 

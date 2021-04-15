@@ -43,7 +43,9 @@ target_link_options(STM32::H7::M7 INTERFACE
     -mcpu=cortex-m7 -mfpu=fpv5-sp-d16 -mfloat-abi=hard
 )
 target_compile_definitions(STM32::H7::M7 INTERFACE 
-    -DCORE_CM7
+    CORE_CM7
+    __FPU_PRESENT=1
+    ARM_MATH_CM7
 )
 
 stm32_util_create_family_targets(H7 M4)
@@ -55,7 +57,9 @@ target_link_options(STM32::H7::M4 INTERFACE
     -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 )
 target_compile_definitions(STM32::H7::M4 INTERFACE 
-    -DCORE_CM4
+    CORE_CM4
+    __FPU_PRESENT=1
+    ARM_MATH_CM4
 )
 
 function(stm32h7_get_memory_info DEVICE TYPE CORE RAM FLASH_ORIGIN RAM_ORIGIN TWO_FLASH_BANKS)

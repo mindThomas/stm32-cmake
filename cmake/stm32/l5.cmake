@@ -20,3 +20,6 @@ target_compile_options(STM32::L5 INTERFACE
 target_link_options(STM32::L5 INTERFACE 
     -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard
 )
+target_compile_definitions(STM32::L5 INTERFACE
+    __FPU_PRESENT=1
+)
