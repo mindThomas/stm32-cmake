@@ -1,5 +1,4 @@
-set(CONFIG_TEXT
-"source [find interface/stlink.cfg]\n\
+set(CONFIG_TEXT "source [find interface/stlink.cfg]\n\
 \n\
 set WORKAREASIZE 0x8000\n\
 \n\
@@ -26,9 +25,6 @@ reset_config srst_only srst_nogate connect_assert_srst\n\
 set CONNECT_UNDER_RESET 1\n\
 \n\
 source [find target/${OPENOCD_TARGET_CFG}]\n\
-"
-)
+")
 
 file(WRITE "${OPENOCD_CFG}" "${CONFIG_TEXT}")
-
-

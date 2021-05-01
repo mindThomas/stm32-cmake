@@ -16,9 +16,8 @@ _eccmram = .;\n\
 } >CCMRAM AT> FLASH\n\
         ")
 endif()
-    
-set(SCRIPT_TEXT 
-"ENTRY(Reset_Handler)\n\
+
+set(SCRIPT_TEXT "ENTRY(Reset_Handler)\n\
 \n\
 _estack = ${RAM_ORIGIN} + ${RAM_SIZE};\n\
 _Min_Heap_Size = ${HEAP_SIZE};\n\
@@ -137,8 +136,5 @@ ${CCRAM_SECTION}\n\
   }\n\
 \n\
   .ARM.attributes 0 : { *(.ARM.attributes) }\n\
-}"
-)
+}")
 file(WRITE "${LINKER_SCRIPT}" "${SCRIPT_TEXT}")
-
-

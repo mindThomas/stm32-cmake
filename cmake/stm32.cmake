@@ -3,17 +3,14 @@ option(STRIP_UNUSED_CODE "Strip Unused code (reduces binary size)" ON)
 
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/stm32_gcc.cmake)
 
-define_property(TARGET PROPERTY DEVICE_FAMILY
-        BRIEF_DOCS "Target Device family"
-        FULL_DOCS "Target Device family, e.g. STM32F4")
+define_property(TARGET
+                PROPERTY DEVICE_FAMILY
+                BRIEF_DOCS "Target Device family"
+                FULL_DOCS "Target Device family, e.g. STM32F4")
 
-define_property(TARGET PROPERTY DEVICE_NAME
-        BRIEF_DOCS "Target Device name"
-        FULL_DOCS "Target Device name, e.g. F743")
+define_property(TARGET PROPERTY DEVICE_NAME BRIEF_DOCS "Target Device name" FULL_DOCS "Target Device name, e.g. F743")
 
-define_property(TARGET PROPERTY DEVICE_CORE
-        BRIEF_DOCS "Target Device core"
-        FULL_DOCS "Target Device core, e.g. M7")
+define_property(TARGET PROPERTY DEVICE_CORE BRIEF_DOCS "Target Device core" FULL_DOCS "Target Device core, e.g. M7")
 
 function(get_openocd_config_name_for_target TARGET CFG)
     get_target_property(LIBRARIES ${TARGET} LINK_LIBRARIES)
@@ -57,33 +54,33 @@ function(stm32_add_flash_target TARGET)
 
         set(OPENOCD_CFG "${CMAKE_CURRENT_BINARY_DIR}/${OPENOCD_CFG_NAME}")
         #message("OpenOCD config file: ${OPENOCD_CFG}")
-#        add_custom_command(OUTPUT "${OPENOCD_CFG}"
-#                COMMAND ${CMAKE_COMMAND}
-#                -DOPENOCD_CFG="${OPENOCD_CFG}"
-#                -P "${STM32_CMAKE_DIR}/stm32/openocd_cfg.cmake"
-#                )
+        #        add_custom_command(OUTPUT "${OPENOCD_CFG}"
+        #                COMMAND ${CMAKE_COMMAND}
+        #                -DOPENOCD_CFG="${OPENOCD_CFG}"
+        #                -P "${STM32_CMAKE_DIR}/stm32/openocd_cfg.cmake"
+        #                )
 
         add_custom_target(flash_${TARGET}
-                COMMAND ${OPENOCD_BIN} -f ${OPENOCD_CFG} -c "gdb_memory_map disable"
-                -c "init"
-                -c "targets"
-                -c "reset halt"
-                #-c "load_image $<TARGET_FILE:${PROJECT_NAME}.elf>"
-                -c "flash write_image erase $<TARGET_FILE:${TARGET}>"
-                #-c "flash write_image erase ${BIN_FILE} 0x08000000"
-                -c "reset halt"
-                -c "verify_image $<TARGET_FILE:${TARGET}>"
-                -c "reset run"
-                -c "exit" # exit, resume or shutdown
-                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                DEPENDS ${OPENOCD_CFG} $<TARGET_FILE:${TARGET}>
-                )
+                          COMMAND ${OPENOCD_BIN} -F ${OPENOCD_CFG} -C "gdb_memory_map disable" -C "init" -C "targets" -C
+                                  "reset halt"
+                                  #-c "load_image $<TARGET_FILE:${PROJECT_NAME}.elf>"
+                                  -C "flash write_image erase $<TARGET_FILE:${TARGET}>"
+                                  #-c "flash write_image erase ${BIN_FILE} 0x08000000"
+                                  -C
+                                  "reset halt"
+                                  -C
+                                  "verify_image $<TARGET_FILE:${TARGET}>"
+                                  -C
+                                  "reset run"
+                                  -C
+                                  "exit" # exit, resume or shutdown
+                          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                          DEPENDS ${OPENOCD_CFG} $<TARGET_FILE:${TARGET}>)
 
         add_custom_target(openocd_${TARGET}
-                COMMAND ${OPENOCD_BIN} -f ${OPENOCD_CFG} -c "gdb_memory_map disable"
-                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                DEPENDS ${OPENOCD_CFG} $<TARGET_FILE:${TARGET}>
-                )        
+                          COMMAND ${OPENOCD_BIN} -F ${OPENOCD_CFG} -C "gdb_memory_map disable"
+                          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                          DEPENDS ${OPENOCD_CFG} $<TARGET_FILE:${TARGET}>)
     endif()
 endfunction()
 
@@ -94,10 +91,9 @@ function(stm32_add_gdb_target TARGET)
 
     # Start debugging with GDB (openocd needs to run in background)
     add_custom_target(gdb_${TARGET}
-        COMMAND ${CMAKE_GDB} -x ${STM32_CMAKE_DIR}/gdb.cfg $<TARGET_FILE:${TARGET}>
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${OPENOCD_CFG} $<TARGET_FILE:${TARGET}>
-    )    
+                      COMMAND ${CMAKE_GDB} -X ${STM32_CMAKE_DIR}/gdb.cfg $<TARGET_FILE:${TARGET}>
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                      DEPENDS ${OPENOCD_CFG} $<TARGET_FILE:${TARGET}>)
 endfunction()
 
 function(stm32_convert_to_hex TARGET)
@@ -106,19 +102,21 @@ function(stm32_convert_to_hex TARGET)
     #             COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${TARGET}> $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.hex
     #             COMMENT "Generating HEX file for ${TARGET}")
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.hex"
-            COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${TARGET}> $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.hex
-            COMMENT "Generating HEX file for ${TARGET}")
+                       COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${TARGET}>
+                               $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.hex
+                       COMMENT "Generating HEX file for ${TARGET}")
     add_custom_target(${TARGET}_hex
-            COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${TARGET}> $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.hex
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            DEPENDS $<TARGET_FILE:${TARGET}>
-            COMMENT "Generating HEX file for ${TARGET}"
-            )
+                      COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${TARGET}>
+                              $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.hex
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                      DEPENDS $<TARGET_FILE:${TARGET}>
+                      COMMENT "Generating HEX file for ${TARGET}")
     set_property(
-            TARGET ${TARGET}
-            APPEND
-            PROPERTY ADDITIONAL_CLEAN_FILES $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.hex # add the hex file to be removed when running 'make clean'
-    )
+        TARGET ${TARGET}
+        APPEND
+        PROPERTY ADDITIONAL_CLEAN_FILES
+                 $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.hex # add the hex file to be removed when running 'make clean'
+        )
 endfunction()
 
 function(stm32_convert_to_binary TARGET)
@@ -127,26 +125,26 @@ function(stm32_convert_to_binary TARGET)
     #            COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${TARGET}> $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.bin
     #            COMMENT "Generating BIN file for ${TARGET}")
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.bin"
-            COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${TARGET}> $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.bin
-            COMMENT "Generating HEX file for ${TARGET}")
+                       COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${TARGET}>
+                               $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.bin
+                       COMMENT "Generating HEX file for ${TARGET}")
     add_custom_target(${TARGET}_bin
-            COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${TARGET}> $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.bin
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            DEPENDS $<TARGET_FILE:${TARGET}>
-            COMMENT "Generating BIN file for ${TARGET}"
-            )
+                      COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${TARGET}>
+                              $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.bin
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                      DEPENDS $<TARGET_FILE:${TARGET}>
+                      COMMENT "Generating BIN file for ${TARGET}")
     set_property(
-            TARGET ${TARGET}
-            APPEND
-            PROPERTY ADDITIONAL_CLEAN_FILES $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.bin # add the binary file to be removed when running 'make clean'
-    )
+        TARGET ${TARGET}
+        APPEND
+        PROPERTY
+            ADDITIONAL_CLEAN_FILES
+            $<TARGET_FILE_DIR:${TARGET}>/${TARGET}.bin # add the binary file to be removed when running 'make clean'
+        )
 endfunction()
 
 function(stm32_print_target_size_after_build TARGET)
-    add_custom_command(TARGET ${TARGET}
-            POST_BUILD
-            COMMAND echo "\n"
-            COMMAND ${CMAKE_SIZE} "$<TARGET_FILE:${TARGET}>")
+    add_custom_command(TARGET ${TARGET} POST_BUILD COMMAND echo "\n" COMMAND ${CMAKE_SIZE} "$<TARGET_FILE:${TARGET}>")
 endfunction()
 
 function(add_device_family_property TARGET)
@@ -163,7 +161,10 @@ function(add_device_family_property TARGET)
     get_target_property(LIBRARIES ${TARGET} LINK_LIBRARIES)
     list(FILTER LIBRARIES INCLUDE REGEX "CMSIS::STM32")
     foreach(library ${LIBRARIES})
-        string(REGEX MATCH "^CMSIS::STM32::([A-Z][0-9])([0-9A-Z][0-9])?([A-Z][0-9A-Z])?(::)?(M[47])?$" match ${library})
+        string(REGEX MATCH
+                     "^CMSIS::STM32::([A-Z][0-9])([0-9A-Z][0-9])?([A-Z][0-9A-Z])?(::)?(M[47])?$"
+                     match
+                     ${library})
         if(match)
             set(FAMILY STM32${CMAKE_MATCH_1})
             set(NAME ${CMAKE_MATCH_1}${CMAKE_MATCH_2}${CMAKE_MATCH_3})
@@ -196,11 +197,11 @@ function(add_executable TARGET)
 
     # Generate map file
     target_link_options(${TARGET} PUBLIC "-Wl,-Map=${TARGET}.map")
-    set_property(
-        TARGET ${TARGET}
-        APPEND
-        PROPERTY ADDITIONAL_CLEAN_FILES ${TARGET}.map # add the map file to be removed when running 'make clean'
-    )
+    set_property(TARGET ${TARGET}
+                 APPEND
+                 PROPERTY ADDITIONAL_CLEAN_FILES
+                          ${TARGET}.map # add the map file to be removed when running 'make clean'
+                 )
 endfunction()
 
 function(target_link_libraries TARGET)

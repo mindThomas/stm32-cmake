@@ -6,12 +6,14 @@ project(stm32-fetch-cmsis-hal C ASM)
 stm32_fetch_cmsis(F4 L0)
 stm32_fetch_hal(F4 L0)
 
-find_package(CMSIS COMPONENTS STM32F407VG STM32L053C8 REQUIRED)
-find_package(HAL COMPONENTS STM32F4 STM32L0 REQUIRED)
+find_package(CMSIS
+             COMPONENTS STM32F407VG STM32L053C8
+             REQUIRED)
+find_package(HAL
+             COMPONENTS STM32F4 STM32L0
+             REQUIRED)
 
-set(PROJECT_SOURCES
-    main.c
-)
+set(PROJECT_SOURCES main.c)
 
 add_executable(stm32-fetch-f4 ${PROJECT_SOURCES})
 target_link_libraries(stm32-fetch-f4 CMSIS::STM32::F407VG STM32::NoSys)

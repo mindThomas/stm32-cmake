@@ -27,9 +27,9 @@ set(DEVICE_STM32L4xx_Nucleo L412RB)
 set(DEVICE_STM32L4xx_Nucleo_32 L412KB)
 set(DEVICE_STM32L4xx_Nucleo_144 L496ZG)
 set(DEFINES_STM32469I_EVAL USE_IOEXPANDER)
-set(DEFINES_STM32F769I_EVAL USE_IOEXPANDER) 
-set(DEFINES_STM32L476G_EVAL USE_IOEXPANDER) 
-set(DEFINES_STM32L4R9I_EVAL USE_ROCKTECH_480x272) 
+set(DEFINES_STM32F769I_EVAL USE_IOEXPANDER)
+set(DEFINES_STM32L476G_EVAL USE_IOEXPANDER)
+set(DEFINES_STM32L4R9I_EVAL USE_ROCKTECH_480x272)
 
 # Ban some boards because their BSP need non-free components
 set(BANNED_BOARDS STM32756G_EVAL)
@@ -47,20 +47,22 @@ find_package(BSP REQUIRED)
 
 set(SOURCES main.c)
 
-foreach(FAMILY ${TEST_FAMILIES})    
+foreach(FAMILY ${TEST_FAMILIES})
     foreach(BOARD ${BSP_${FAMILY}_BOARDS})
-        string(REPLACE "-" "_" BOARD ${BOARD})
-        
+        string(REPLACE "-"
+                       "_"
+                       BOARD
+                       ${BOARD})
+
         if(BOARD IN_LIST BANNED_BOARDS)
             continue()
         endif()
-        
+
         add_executable(bsp-test-${BOARD} ${SOURCES})
-        target_link_libraries(bsp-test-${BOARD} 
-            BSP::STM32::${BOARD} 
-            HAL::STM32::${FAMILY}
-            STM32::NoSys
-        )
+        target_link_libraries(bsp-test-${BOARD}
+                              BSP::STM32::${BOARD}
+                              HAL::STM32::${FAMILY}
+                              STM32::NoSys)
         if(DEVICE_${BOARD})
             target_link_libraries(bsp-test-${BOARD} CMSIS::STM32::${DEVICE_${BOARD}})
         endif()

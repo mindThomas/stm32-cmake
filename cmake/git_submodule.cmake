@@ -12,14 +12,11 @@ function(load_git_submodule SUBMODULE_GROUP SUBMODULE_NAME CHECK_SUBFOLDER SET_P
     endif()
 
     message("Initializing submodule (if present)")
-    execute_process(
-            COMMAND bash -c "git submodule update --init ${SUBMODULE_RELATIVE_PATH}"
-            WORKING_DIRECTORY "${STM32_CMAKE_DIR}"
-            OUTPUT_VARIABLE TMP
-            ERROR_VARIABLE TMP_ERROR
-            OUTPUT_QUIET
-            ERROR_QUIET
-    )
+    execute_process(COMMAND bash -c "git submodule update --init ${SUBMODULE_RELATIVE_PATH}"
+                    WORKING_DIRECTORY "${STM32_CMAKE_DIR}"
+                    OUTPUT_VARIABLE TMP
+                    ERROR_VARIABLE TMP_ERROR
+                    OUTPUT_QUIET ERROR_QUIET)
     message("${TMP}")
 
     if(EXISTS "${SUBMODULE_PATH}" AND EXISTS "${CHECK_FOLDER}")
@@ -37,14 +34,12 @@ function(git_clone GIT_URL SUBMODULE_FOLDER GIT_TAG CHECK_SUBFOLDER SET_PATH)
     set(${SET_PATH} "" PARENT_SCOPE) # clear the path
 
     if(EXISTS "${SUBMODULE_PATH}" AND EXISTS "${CHECK_FOLDER}")
-        if (GIT_TAG)
+        if(GIT_TAG)
             message("Checking out version ${GIT_TAG} of module ${SUBMODULE_RELATIVE_PATH}")
-            execute_process(
-                    COMMAND bash -c "git checkout ${GIT_TAG}"
-                    WORKING_DIRECTORY "${STM32_CMAKE_DIR}/${SUBMODULE_RELATIVE_PATH}"
-                    OUTPUT_VARIABLE TMP
-                    ERROR_VARIABLE TMP_ERROR
-            )
+            execute_process(COMMAND bash -c "git checkout ${GIT_TAG}"
+                            WORKING_DIRECTORY "${STM32_CMAKE_DIR}/${SUBMODULE_RELATIVE_PATH}"
+                            OUTPUT_VARIABLE TMP
+                            ERROR_VARIABLE TMP_ERROR)
             message("${TMP_ERROR}")
 
             if(NOT TMP_ERROR MATCHES "error")
@@ -67,23 +62,20 @@ function(git_clone GIT_URL SUBMODULE_FOLDER GIT_TAG CHECK_SUBFOLDER SET_PATH)
     if(GIT_TAG)
         message("Cloning module: ${SUBMODULE_RELATIVE_PATH} # ${GIT_TAG} from https://${GIT_URL}.git")
         execute_process(
-                COMMAND bash -c "git clone --depth 1 --branch ${GIT_TAG} --single-branch https://${GIT_URL}.git ${SUBMODULE_RELATIVE_PATH}"
-                WORKING_DIRECTORY "${STM32_CMAKE_DIR}"
-                OUTPUT_VARIABLE TMP
-                ERROR_VARIABLE TMP_ERROR
-                OUTPUT_QUIET
-                ERROR_QUIET
-        )
+            COMMAND
+                bash -c
+                "git clone --depth 1 --branch ${GIT_TAG} --single-branch https://${GIT_URL}.git ${SUBMODULE_RELATIVE_PATH}"
+            WORKING_DIRECTORY "${STM32_CMAKE_DIR}"
+            OUTPUT_VARIABLE TMP
+            ERROR_VARIABLE TMP_ERROR
+            OUTPUT_QUIET ERROR_QUIET)
     else()
         message("Cloning module: ${SUBMODULE_RELATIVE_PATH} from https://${GIT_URL}.git")
-        execute_process(
-                COMMAND bash -c "git clone --depth 1 https://${GIT_URL}.git ${SUBMODULE_RELATIVE_PATH}"
-                WORKING_DIRECTORY "${STM32_CMAKE_DIR}"
-                OUTPUT_VARIABLE TMP
-                ERROR_VARIABLE TMP_ERROR
-                OUTPUT_QUIET
-                ERROR_QUIET
-        )
+        execute_process(COMMAND bash -c "git clone --depth 1 https://${GIT_URL}.git ${SUBMODULE_RELATIVE_PATH}"
+                        WORKING_DIRECTORY "${STM32_CMAKE_DIR}"
+                        OUTPUT_VARIABLE TMP
+                        ERROR_VARIABLE TMP_ERROR
+                        OUTPUT_QUIET ERROR_QUIET)
     endif()
     message("${TMP}")
 
@@ -93,13 +85,23 @@ function(git_clone GIT_URL SUBMODULE_FOLDER GIT_TAG CHECK_SUBFOLDER SET_PATH)
     endif()
 
     if(GIT_TAG)
-        message(FATAL_ERROR "Could not clone or identify the module (${SUBMODULE_RELATIVE_PATH}). Are you connected to the internet? Is the Git tag (${GIT_TAG}) correct?")
+        message(
+            FATAL_ERROR
+                "Could not clone or identify the module (${SUBMODULE_RELATIVE_PATH}). Are you connected to the internet? Is the Git tag (${GIT_TAG}) correct?"
+            )
     else()
-        message(FATAL_ERROR "Could not clone or identify the module (${SUBMODULE_RELATIVE_PATH}). Are you connected to the internet?")
+        message(
+            FATAL_ERROR
+                "Could not clone or identify the module (${SUBMODULE_RELATIVE_PATH}). Are you connected to the internet?"
+            )
     endif()
 endfunction()
 
 function(git_clone_st SUBMODULE_FOLDER REPOSITORY_NAME GIT_TAG CHECK_SUBFOLDER SET_PATH)
-    git_clone("github.com/STMicroelectronics/${REPOSITORY_NAME}" ${SUBMODULE_FOLDER} "${GIT_TAG}" ${CHECK_SUBFOLDER} SET_PATH_OUT)
+    git_clone("github.com/STMicroelectronics/${REPOSITORY_NAME}"
+              ${SUBMODULE_FOLDER}
+              "${GIT_TAG}"
+              ${CHECK_SUBFOLDER}
+              SET_PATH_OUT)
     set(${SET_PATH} ${SET_PATH_OUT} PARENT_SCOPE)
 endfunction()

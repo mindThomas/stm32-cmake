@@ -22,16 +22,16 @@ foreach(FAMILY ${TEST_FAMILIES})
     stm32_get_devices_by_family(DEVICES FAMILY ${FAMILY})
     list(GET DEVICES 0 DEVICE)
     stm32_get_cores(CORES FAMILY ${FAMILY} DEVICE ${DEVICE})
-    
+
     if(CORES)
         list(GET CORES 0 CORE)
         set(CORE "::${CORE}")
     else()
         unset(CORE)
     endif()
-    
+
     add_executable(hal-test-${FAMILY} ${SOURCES})
-    
+
     foreach(DRIVER ${HAL_DRIVERS_${FAMILY}})
         string(TOUPPER ${DRIVER} DRIVER)
         target_link_libraries(hal-test-${FAMILY} HAL::STM32::${FAMILY}${CORE}::${DRIVER})

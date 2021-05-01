@@ -1113,8 +1113,7 @@ set(STM32_ALL_DEVICES
     WB55VG
     WLE5J8
     WLE5JB
-    WLE5JC
-)
+    WLE5JC)
 
 function(stm32_get_devices_by_family DEVICES)
     set(ARG_OPTIONS "")

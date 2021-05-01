@@ -27,8 +27,12 @@ target_link_options(STM32::F1 INTERFACE
 
 # cmake-format: on
 function(stm32f1_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
-    string(REGEX REPLACE "F1[0-9][0-9].([468BCDEFGHI])" "\\1" SIZE_CODE ${DEVICE})
-    
+    string(REGEX
+           REPLACE "F1[0-9][0-9].([468BCDEFGHI])"
+                   "\\1"
+                   SIZE_CODE
+                   ${DEVICE})
+
     if((TYPE STREQUAL "F100xB") OR (TYPE STREQUAL "F100xE"))
         if((SIZE_CODE STREQUAL "4") OR (SIZE_CODE STREQUAL "6"))
             set(RAM "4K")
@@ -39,9 +43,12 @@ function(stm32f1_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
         elseif((SIZE_CODE STREQUAL "D") OR (SIZE_CODE STREQUAL "E"))
             set(RAM "32K")
         endif()
-    elseif((TYPE STREQUAL "F101x6") OR (TYPE STREQUAL "F101xB") OR 
-           (TYPE STREQUAL "F101xE") OR (TYPE STREQUAL "F101xG") OR
-           (TYPE STREQUAL "F102x6") OR (TYPE STREQUAL "F102xB"))
+    elseif((TYPE STREQUAL "F101x6")
+           OR (TYPE STREQUAL "F101xB")
+           OR (TYPE STREQUAL "F101xE")
+           OR (TYPE STREQUAL "F101xG")
+           OR (TYPE STREQUAL "F102x6")
+           OR (TYPE STREQUAL "F102xB"))
         if(SIZE_CODE STREQUAL "4")
             set(RAM "4K")
         elseif(SIZE_CODE STREQUAL "6")
@@ -57,8 +64,7 @@ function(stm32f1_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
         elseif((SIZE_CODE STREQUAL "F") OR (SIZE_CODE STREQUAL "G"))
             set(RAM "80K")
         endif()
-    elseif((TYPE STREQUAL "F103x6") OR (TYPE STREQUAL "F103xB") OR
-           (TYPE STREQUAL "F103xE") OR (TYPE STREQUAL "F103xG"))
+    elseif((TYPE STREQUAL "F103x6") OR (TYPE STREQUAL "F103xB") OR (TYPE STREQUAL "F103xE") OR (TYPE STREQUAL "F103xG"))
         if(SIZE_CODE STREQUAL "4")
             set(RAM "6K")
         elseif(SIZE_CODE STREQUAL "6")
@@ -75,6 +81,6 @@ function(stm32f1_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
     elseif((TYPE STREQUAL "F105xC") OR (TYPE STREQUAL "F107xC"))
         set(RAM "64K")
     endif()
-    
+
     set(${RAM_SIZE} ${RAM} PARENT_SCOPE)
 endfunction()

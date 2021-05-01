@@ -22,7 +22,7 @@ foreach(FAMILY ${TEST_FAMILIES})
     stm32_get_cores(CORES FAMILY ${FAMILY})
     foreach(DEVICE ${DEVICES})
         stm32_get_chip_type(${FAMILY} ${DEVICE} TYPE)
-        
+
         if(NOT CORES)
             stm32_get_memory_info(FAMILY ${FAMILY} DEVICE ${DEVICE} FLASH SIZE FLASH_SIZE)
             stm32_get_memory_info(FAMILY ${FAMILY} DEVICE ${DEVICE} RAM SIZE RAM_SIZE)
@@ -34,7 +34,10 @@ foreach(FAMILY ${TEST_FAMILIES})
             foreach(CORE ${DEV_CORES})
                 stm32_get_memory_info(FAMILY ${FAMILY} DEVICE ${DEVICE} CORE ${CORE} FLASH SIZE FLASH_SIZE)
                 stm32_get_memory_info(FAMILY ${FAMILY} DEVICE ${DEVICE} CORE ${CORE} RAM SIZE RAM_SIZE)
-                message(STATUS "STM32${DEVICE}: ${FAMILY} family, type ${TYPE}, core ${CORE}, ${FLASH_SIZE} flash, ${RAM_SIZE} RAM")
+                message(
+                    STATUS
+                        "STM32${DEVICE}: ${FAMILY} family, type ${TYPE}, core ${CORE}, ${FLASH_SIZE} flash, ${RAM_SIZE} RAM"
+                    )
                 add_executable(cmsis-test-${DEVICE}-${CORE} ${SOURCES})
                 target_link_libraries(cmsis-test-${DEVICE}-${CORE} CMSIS::STM32::${DEVICE}::${CORE} STM32::NoSys)
             endforeach()

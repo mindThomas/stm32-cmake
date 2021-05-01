@@ -66,7 +66,7 @@ target_compile_definitions(STM32::H7::M4 INTERFACE
 
 function(stm32h7_get_memory_info DEVICE TYPE CORE RAM FLASH_ORIGIN RAM_ORIGIN TWO_FLASH_BANKS)
     if(${TYPE} IN_LIST STM32_H7_NO_FLASH_SPLIT)
-        set(${TWO_FLASH_BANKS} FALSE PARENT_SCOPE)  
+        set(${TWO_FLASH_BANKS} FALSE PARENT_SCOPE)
     else()
         set(${TWO_FLASH_BANKS} TRUE PARENT_SCOPE)
     endif()

@@ -35,8 +35,12 @@ target_compile_definitions(STM32::F3 INTERFACE
 
 # cmake-format: on
 function(stm32f3_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
-    string(REGEX REPLACE "F3[0-9][0-9].([468BCDEFGHI])" "\\1" SIZE_CODE ${DEVICE})
-    
+    string(REGEX
+           REPLACE "F3[0-9][0-9].([468BCDEFGHI])"
+                   "\\1"
+                   SIZE_CODE
+                   ${DEVICE})
+
     if(TYPE STREQUAL "F302xC")
         if(SIZE_CODE STREQUAL "C")
             set(RAM "40K")
@@ -58,7 +62,7 @@ function(stm32f3_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
             set(RAM "16K")
         endif()
     endif()
-    
+
     if(RAM)
         set(${RAM_SIZE} ${RAM} PARENT_SCOPE)
     endif()

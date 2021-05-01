@@ -20,14 +20,17 @@ foreach(FAMILY ${TEST_FAMILIES})
     stm32_get_devices_by_family(DEVICES FAMILY ${FAMILY})
     list(GET DEVICES 0 DEVICE)
     stm32_get_cores(CORES FAMILY ${FAMILY} DEVICE ${DEVICE})
-    
+
     if(CORES)
         list(GET CORES 0 CORE)
         set(CORE "::${CORE}")
     else()
         unset(CORE)
     endif()
-    
+
     add_executable(fetch-test-${FAMILY} ${SOURCES})
-    target_link_libraries(fetch-test-${FAMILY} STM32::NoSys HAL::STM32::${FAMILY}${CORE}::CORTEX CMSIS::STM32::${DEVICE}${CORE})
+    target_link_libraries(fetch-test-${FAMILY}
+                          STM32::NoSys
+                          HAL::STM32::${FAMILY}${CORE}::CORTEX
+                          CMSIS::STM32::${DEVICE}${CORE})
 endforeach()

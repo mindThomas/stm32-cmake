@@ -23,8 +23,12 @@ target_link_options(STM32::F2 INTERFACE
 # cmake-format: on
 
 function(stm32f2_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
-    string(REGEX REPLACE "F2[0-9][0-9].([468BCDEFGHI])" "\\1" SIZE_CODE ${DEVICE})
-    
+    string(REGEX
+           REPLACE "F2[0-9][0-9].([468BCDEFGHI])"
+                   "\\1"
+                   SIZE_CODE
+                   ${DEVICE})
+
     if(TYPE STREQUAL "F205xx")
         if(SIZE_CODE STREQUAL "B")
             set(RAM "64K")
@@ -34,7 +38,7 @@ function(stm32f2_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
             set(RAM "128K")
         endif()
     endif()
-    
+
     if(RAM)
         set(${RAM_SIZE} ${RAM} PARENT_SCOPE)
     endif()

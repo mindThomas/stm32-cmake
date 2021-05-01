@@ -31,10 +31,14 @@ target_link_options(STM32::L1 INTERFACE
 
 # cmake-format: on
 function(stm32l1_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
-    string(REGEX REPLACE "L1[0-9][0-9].([68BCDE])" "\\1" SIZE_CODE ${DEVICE})
-    
+    string(REGEX
+           REPLACE "L1[0-9][0-9].([68BCDE])"
+                   "\\1"
+                   SIZE_CODE
+                   ${DEVICE})
+
     unset(RAM)
-    
+
     if((TYPE STREQUAL "L100xB"))
         if(SIZE_CODE STREQUAL "6")
             set(RAM "4K")
@@ -68,7 +72,7 @@ function(stm32l1_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
             set(RAM "32K")
         endif()
     endif()
-    
+
     if(RAM)
         set(${RAM_SIZE} ${RAM} PARENT_SCOPE)
     endif()
