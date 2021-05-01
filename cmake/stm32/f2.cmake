@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_F2_TYPES 
     F205xx F215xx F207xx F217xx
 )
@@ -19,6 +20,7 @@ target_compile_options(STM32::F2 INTERFACE
 target_link_options(STM32::F2 INTERFACE 
     -mcpu=cortex-m3
 )
+# cmake-format: on
 
 function(stm32f2_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
     string(REGEX REPLACE "F2[0-9][0-9].([468BCDEFGHI])" "\\1" SIZE_CODE ${DEVICE})

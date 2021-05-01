@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_F7_TYPES 
     F756xx F746xx F745xx F765xx F767xx F769xx F777xx F779xx
     F722xx F723xx F732xx F733xx F730xx F750xx
@@ -27,3 +28,4 @@ target_compile_definitions(STM32::F7 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM7
 )
+# cmake-format: on

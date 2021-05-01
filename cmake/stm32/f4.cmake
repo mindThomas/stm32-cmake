@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_F4_TYPES 
     F401xC F401xE F405xx F407xx F410Cx F410Rx F410Tx F411xE 
     F412Cx F412Rx F412Vx F412Zx F413xx F415xx F417xx F423xx
@@ -31,3 +32,4 @@ target_compile_definitions(STM32::F4 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM4
 )
+# cmake-format: on

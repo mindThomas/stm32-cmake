@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_F3_TYPES 
     F301x8 F302x8 F302xC F302xE F303x8 F303xC 
     F303xE F318xx F328xx F334x8 F358xx F373xC 
@@ -32,6 +33,7 @@ target_compile_definitions(STM32::F3 INTERFACE
     ARM_MATH_CM4
 )
 
+# cmake-format: on
 function(stm32f3_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
     string(REGEX REPLACE "F3[0-9][0-9].([468BCDEFGHI])" "\\1" SIZE_CODE ${DEVICE})
     

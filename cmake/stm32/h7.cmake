@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_H7_TYPES
     H723xx H725xx  H730xx H730xxQ H733xx H735xx
     H743xx H753xx  H750xx H742xx  H745xx H755xx H747xx H757xx
@@ -61,6 +62,7 @@ target_compile_definitions(STM32::H7::M4 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM4
 )
+# cmake-format: on
 
 function(stm32h7_get_memory_info DEVICE TYPE CORE RAM FLASH_ORIGIN RAM_ORIGIN TWO_FLASH_BANKS)
     if(${TYPE} IN_LIST STM32_H7_NO_FLASH_SPLIT)

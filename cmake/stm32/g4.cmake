@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_G4_TYPES 
     G431xx G441xx G471xx G473xx G483xx G474xx G484xx
     G491xx G4A1xx
@@ -27,3 +28,4 @@ target_compile_definitions(STM32::G4 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM4
 )
+# cmake-format: on

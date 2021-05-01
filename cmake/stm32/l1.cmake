@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_L1_TYPES 
     L100xB  L100xBA L100xC  L151xB  L151xBA L151xC  L151xCA L151xD 
     L151xDX L151xE  L152xB  L152xBA L152xC  L152xCA L152xD  L152xDX
@@ -28,6 +29,7 @@ target_link_options(STM32::L1 INTERFACE
     -mcpu=cortex-m3
 )
 
+# cmake-format: on
 function(stm32l1_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
     string(REGEX REPLACE "L1[0-9][0-9].([68BCDE])" "\\1" SIZE_CODE ${DEVICE})
     

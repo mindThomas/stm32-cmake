@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_L5_TYPES 
     L552xx L562xx
 )
@@ -23,3 +24,4 @@ target_link_options(STM32::L5 INTERFACE
 target_compile_definitions(STM32::L5 INTERFACE
     __FPU_PRESENT=1
 )
+# cmake-format: on

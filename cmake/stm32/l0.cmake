@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_L0_TYPES 
     L010x4 L010x6 L010x8 L010xB L011xx L021xx L031xx L041xx
     L051xx L052xx L053xx L061xx L062xx L063xx L071xx L072xx
@@ -27,3 +28,4 @@ target_compile_options(STM32::L0 INTERFACE
 target_link_options(STM32::L0 INTERFACE 
     -mcpu=cortex-m0plus
 )
+# cmake-format: on

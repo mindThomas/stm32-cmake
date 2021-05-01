@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_L4_TYPES 
     L412xx L422xx L431xx L432xx L433xx L442xx 
     L443xx L451xx L452xx L462xx L471xx L475xx 
@@ -42,4 +43,4 @@ target_compile_definitions(STM32::L4 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM4
 )
-
+# cmake-format: on

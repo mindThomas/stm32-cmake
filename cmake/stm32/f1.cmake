@@ -1,3 +1,4 @@
+# cmake-format: off
 set(STM32_F1_TYPES 
     F100xB F100xE F101x6 F101xB F101xE F101xG F102x6 F102xB 
     F103x6 F103xB F103xE F103xG F105xC F107xC
@@ -24,6 +25,7 @@ target_link_options(STM32::F1 INTERFACE
     -mcpu=cortex-m3
 )
 
+# cmake-format: on
 function(stm32f1_get_memory_info DEVICE TYPE FLASH_SIZE RAM_SIZE)
     string(REGEX REPLACE "F1[0-9][0-9].([468BCDEFGHI])" "\\1" SIZE_CODE ${DEVICE})
     
