@@ -37,8 +37,26 @@ function(git_clone GIT_URL SUBMODULE_FOLDER GIT_TAG CHECK_SUBFOLDER SET_PATH)
     set(${SET_PATH} "" PARENT_SCOPE) # clear the path
 
     if(EXISTS "${SUBMODULE_PATH}" AND EXISTS "${CHECK_FOLDER}")
-        set(${SET_PATH} ${SUBMODULE_PATH} PARENT_SCOPE)
-        return()
+        if (GIT_TAG)
+            message("Checking out version ${GIT_TAG} of module ${SUBMODULE_RELATIVE_PATH}")
+            execute_process(
+                    COMMAND bash -c "git checkout ${GIT_TAG}"
+                    WORKING_DIRECTORY "${STM32_CMAKE_DIR}/${SUBMODULE_RELATIVE_PATH}"
+                    OUTPUT_VARIABLE TMP
+                    ERROR_VARIABLE TMP_ERROR
+            )
+            message("${TMP_ERROR}")
+
+            if(NOT TMP_ERROR MATCHES "error")
+                set(${SET_PATH} ${SUBMODULE_PATH} PARENT_SCOPE)
+                return()
+            else()
+                file(REMOVE_RECURSE "${STM32_CMAKE_DIR}/${SUBMODULE_RELATIVE_PATH}")
+            endif()
+        else()
+            set(${SET_PATH} ${SUBMODULE_PATH} PARENT_SCOPE)
+            return()
+        endif()
     endif()
 
     if(EXISTS "${SUBMODULE_PATH}")

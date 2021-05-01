@@ -15,8 +15,12 @@ function(stm32_util_create_family_targets FAMILY)
         add_library(STM32::${FAMILY}${CORE_C} INTERFACE IMPORTED)
         target_compile_options(STM32::${FAMILY}${CORE_C} INTERFACE 
             --sysroot="${TOOLCHAIN_SYSROOT}"
-            -mthumb -mabi=aapcs -Wall -ffunction-sections -fdata-sections -fno-strict-aliasing -fno-builtin -ffast-math
+            -mthumb -mabi=aapcs -fno-strict-aliasing -fno-builtin -ffast-math
+            -ffreestanding -fno-exceptions #-nostartfiles -fno-rtti
             -fno-common -fmessage-length=0
+            -Wall
+            #-Wall -Wextra -Wpedantic # Be extra verbose (throw more warning) when compiling
+            #-Werror # report all warnings as errors
             #$<$<CONFIG:Debug>:-Og>
             #$<$<CONFIG:Release>:-Os>
         )
@@ -24,8 +28,9 @@ function(stm32_util_create_family_targets FAMILY)
             --sysroot="${TOOLCHAIN_SYSROOT}"
             -mthumb #-mthumb-interwork
             -mabi=aapcs
-            -Wl,--gc-sections,--print-memory-usage
-            -Wl,--start-group -lc -lm -Wl,--end-group
+            -Wl,--print-memory-usage
+            -Wl,--start-group -lc -lm -lnosys -Wl,--end-group
+            -Wl,--cref
             #$<$<CONFIG:Debug>:-Og>
             #$<$<CONFIG:Release>:-Os -s>
         )
@@ -34,6 +39,16 @@ function(stm32_util_create_family_targets FAMILY)
             ARM_MATH_MATRIX_CHECK
             ARM_MATH_ROUNDING
         )
+
+        if(${STRIP_UNUSED_CODE})
+            target_compile_options(STM32::${FAMILY}${CORE_C} INTERFACE
+                    -ffunction-sections -fdata-sections
+            )
+
+            target_link_options(STM32::${FAMILY}${CORE_C} INTERFACE
+                -Wl,--gc-sections
+            )
+        endif()
     endif()
     foreach(TYPE ${STM32_${FAMILY}_TYPES})
         if(NOT (TARGET STM32::${TYPE}${CORE_C}))

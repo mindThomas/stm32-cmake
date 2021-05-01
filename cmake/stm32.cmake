@@ -1,4 +1,19 @@
+option(VERBOSE "Verbose CMake" OFF)
+option(STRIP_UNUSED_CODE "Strip Unused code (reduces binary size)" ON)
+
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/stm32_gcc.cmake)
+
+define_property(TARGET PROPERTY DEVICE_FAMILY
+        BRIEF_DOCS "Target Device family"
+        FULL_DOCS "Target Device family, e.g. STM32F4")
+
+define_property(TARGET PROPERTY DEVICE_NAME
+        BRIEF_DOCS "Target Device name"
+        FULL_DOCS "Target Device name, e.g. F743")
+
+define_property(TARGET PROPERTY DEVICE_CORE
+        BRIEF_DOCS "Target Device core"
+        FULL_DOCS "Target Device core, e.g. M7")
 
 function(get_openocd_config_name_for_target TARGET CFG)
     get_target_property(LIBRARIES ${TARGET} LINK_LIBRARIES)
@@ -12,7 +27,7 @@ function(get_openocd_config_name_for_target TARGET CFG)
         list(FILTER DEPENDENCIES INCLUDE REGEX "OPENOCD")
         list(LENGTH DEPENDENCIES NUM_DEPENDENCIES)
         if(NUM_DEPENDENCIES EQUAL 1)
-            message("OpenOCD config file defined: ${DEPENDENCIES}.cfg")
+            message("[${TARGET}] OpenOCD config file: ${DEPENDENCIES}.cfg")
             set(${CFG} ${DEPENDENCIES}.cfg PARENT_SCOPE)
         endif()
     endif()
@@ -134,6 +149,42 @@ function(stm32_print_target_size_after_build TARGET)
             COMMAND ${CMAKE_SIZE} "$<TARGET_FILE:${TARGET}>")
 endfunction()
 
+function(add_device_family_property TARGET)
+    get_property(TMP TARGET ${TARGET} PROPERTY TYPE)
+    if(NOT TMP STREQUAL "EXECUTABLE")
+        return()
+    endif()
+
+    get_property(DEVICE_FAMILY TARGET ${TARGET} PROPERTY DEVICE_FAMILY)
+    if(DEVICE_FAMILY)
+        return()
+    endif()
+
+    get_target_property(LIBRARIES ${TARGET} LINK_LIBRARIES)
+    list(FILTER LIBRARIES INCLUDE REGEX "CMSIS::STM32")
+    foreach(library ${LIBRARIES})
+        string(REGEX MATCH "^CMSIS::STM32::([A-Z][0-9])([0-9A-Z][0-9])?([A-Z][0-9A-Z])?(::)?(M[47])?$" match ${library})
+        if(match)
+            set(FAMILY STM32${CMAKE_MATCH_1})
+            set(NAME ${CMAKE_MATCH_1}${CMAKE_MATCH_2}${CMAKE_MATCH_3})
+            set(CORE ${CMAKE_MATCH_5})
+
+            if(CORE)
+                message("[${TARGET}] Device Family: ${FAMILY}, Chip: ${NAME}, Core: ${CORE}")
+            else()
+                message("[${TARGET}] Device Family: ${FAMILY}, Chip: ${NAME}")
+            endif()
+
+            set_property(TARGET ${TARGET} PROPERTY DEVICE_FAMILY ${FAMILY})
+            set_property(TARGET ${TARGET} PROPERTY DEVICE_NAME ${NAME})
+            if(CMAKE_MATCH_5)
+                set_property(TARGET ${TARGET} PROPERTY DEVICE_CORE ${CORE})
+            endif()
+            return()
+        endif()
+    endforeach()
+endfunction()
+
 # Tap into (override) add_executable to add a few extra functions
 function(add_executable TARGET)
     _add_executable(${TARGET} ${ARGN}) # Call the original function
@@ -142,9 +193,18 @@ function(add_executable TARGET)
     stm32_convert_to_hex(${TARGET})
     stm32_convert_to_binary(${TARGET})
     stm32_add_gdb_target(${TARGET})
+
+    # Generate map file
+    target_link_options(${TARGET} PUBLIC "-Wl,-Map=${TARGET}.map")
+    set_property(
+        TARGET ${TARGET}
+        APPEND
+        PROPERTY ADDITIONAL_CLEAN_FILES ${TARGET}.map # add the map file to be removed when running 'make clean'
+    )
 endfunction()
 
 function(target_link_libraries TARGET)
     _target_link_libraries(${TARGET} ${ARGN}) # Call the original function
+    add_device_family_property(${TARGET})
     stm32_add_flash_target(${TARGET})
 endfunction()
