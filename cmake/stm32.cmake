@@ -8,6 +8,11 @@ define_property(TARGET
                 BRIEF_DOCS "Target Device family"
                 FULL_DOCS "Target Device family, e.g. STM32F4")
 
+define_property(TARGET
+                PROPERTY DEVICE_FAMILY_SHORT
+                BRIEF_DOCS "Target Device family (short version)"
+                FULL_DOCS "Target Device family (short version), e.g. F4")
+
 define_property(TARGET PROPERTY DEVICE_NAME BRIEF_DOCS "Target Device name" FULL_DOCS "Target Device name, e.g. F743")
 
 define_property(TARGET PROPERTY DEVICE_CORE BRIEF_DOCS "Target Device core" FULL_DOCS "Target Device core, e.g. M7")
@@ -167,6 +172,7 @@ function(add_device_family_property TARGET)
                      ${library})
         if(match)
             set(FAMILY STM32${CMAKE_MATCH_1})
+            set(FAMILY_SHORT ${CMAKE_MATCH_1})
             set(NAME ${CMAKE_MATCH_1}${CMAKE_MATCH_2}${CMAKE_MATCH_3})
             set(CORE ${CMAKE_MATCH_5})
 
@@ -177,6 +183,7 @@ function(add_device_family_property TARGET)
             endif()
 
             set_property(TARGET ${TARGET} PROPERTY DEVICE_FAMILY ${FAMILY})
+            set_property(TARGET ${TARGET} PROPERTY DEVICE_FAMILY_SHORT ${FAMILY_SHORT})
             set_property(TARGET ${TARGET} PROPERTY DEVICE_NAME ${NAME})
             if(CMAKE_MATCH_5)
                 set_property(TARGET ${TARGET} PROPERTY DEVICE_CORE ${CORE})

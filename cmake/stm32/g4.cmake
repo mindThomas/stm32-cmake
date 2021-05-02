@@ -28,4 +28,5 @@ target_compile_definitions(STM32::G4 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM4
 )
+target_link_libraries(STM32::G4 INTERFACE arm_cortexM4lf_math)
 # cmake-format: on

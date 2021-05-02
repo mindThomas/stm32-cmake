@@ -299,6 +299,8 @@ foreach(COMP ${CMSIS_FIND_COMPONENTS})
                                    INTERFACE "${CMSIS_${FAMILY}${CORE_U}_PATH}/Include")
         target_sources(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE "${CMSIS_${FAMILY}${CORE_U}_SOURCE}")
         cmsis_generate_openocd_config(${FAMILY} "${FAMILY}${CORE_U}" "CMSIS::STM32::${FAMILY}${CORE_C}")
+        target_link_directories(CMSIS::STM32::${FAMILY}${CORE_C} INTERFACE
+                                "${CMSIS_${FAMILY}${CORE_U}_CORE_PATH}/DSP/Lib/GCC/")
         if(${VERBOSE})
             message("Adding generic library CMSIS::STM32::${FAMILY}${CORE_C}")
         endif()

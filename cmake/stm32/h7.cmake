@@ -48,6 +48,7 @@ target_compile_definitions(STM32::H7::M7 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM7
 )
+target_link_libraries(STM32::H7::M7 INTERFACE arm_cortexM7lfdp_math)
 
 stm32_util_create_family_targets(H7 M4)
 
@@ -62,6 +63,7 @@ target_compile_definitions(STM32::H7::M4 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM4
 )
+target_link_libraries(STM32::H7::M7 INTERFACE arm_cortexM4lf_math)
 # cmake-format: on
 
 function(stm32h7_get_memory_info DEVICE TYPE CORE RAM FLASH_ORIGIN RAM_ORIGIN TWO_FLASH_BANKS)

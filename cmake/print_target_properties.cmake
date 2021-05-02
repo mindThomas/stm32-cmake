@@ -46,3 +46,58 @@ function(print_target_properties tgt)
         message(STATUS "${msg}")
     endforeach()
 endfunction(print_target_properties)
+
+function(get_propagated_target_properties_recursive out_list tgt property)
+    if(NOT TARGET ${tgt})
+        message("There is no target named '${tgt}'")
+        return()
+    endif()
+
+    get_property(propval TARGET ${tgt} PROPERTY INTERFACE_LINK_LIBRARIES SET)
+    if(propval)
+        get_target_property(LINK_LIBRARIES ${tgt} INTERFACE_LINK_LIBRARIES)
+    else()
+        return()
+    endif()
+
+    set(property_list "")
+    foreach(library ${LINK_LIBRARIES})
+        if(NOT TARGET ${library})
+            continue()
+        endif()
+
+        get_property(propval TARGET ${library} PROPERTY ${property} SET)
+        #message("Checking library ${library} : ${${out_list}}")
+        if(propval)
+            get_target_property(propval ${library} ${property})
+            list(APPEND property_list ${propval})
+        endif()
+
+        set(tmp_extra "")
+        get_propagated_target_properties_recursive(tmp_extra ${library} ${property})
+        list(APPEND property_list ${tmp_extra})
+    endforeach(library)
+
+    set(${out_list} ${property_list} PARENT_SCOPE)
+    list(REMOVE_DUPLICATES ${out_list})
+endfunction(get_propagated_target_properties_recursive)
+
+function(get_propagated_target_properties out_list tgt property)
+    get_propagated_target_properties_recursive(out ${tgt} ${property})
+    list(REMOVE_DUPLICATES out)
+    set(${out_list} ${out} PARENT_SCOPE)
+endfunction(get_propagated_target_properties)
+
+function(get_mcpu mcpu_out target)
+    get_propagated_target_properties(target_properties ${target} INTERFACE_COMPILE_OPTIONS)
+
+    foreach(item ${target_properties})
+        string(REGEX MATCH
+                     "^-mcpu=(.+)$"
+                     MCPU
+                     ${item})
+        if(MCPU)
+            set(${mcpu_out} ${CMAKE_MATCH_1} PARENT_SCOPE)
+        endif()
+    endforeach()
+endfunction()

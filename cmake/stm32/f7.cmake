@@ -28,4 +28,5 @@ target_compile_definitions(STM32::F7 INTERFACE
     __FPU_PRESENT=1
     ARM_MATH_CM7
 )
+target_link_libraries(STM32::F7 INTERFACE arm_cortexM7lfdp_math)
 # cmake-format: on

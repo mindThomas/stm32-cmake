@@ -95,5 +95,21 @@ target_link_libraries(stm32-blinky-h7
                       STM32H7_USBCDC)
 target_compile_definitions(stm32-blinky-h7 PUBLIC HSE_VALUE=8000000)
 
+#target_compile_definitions(
+#        stm32-blinky-h7 PUBLIC
+#        $<FILTER:$<TARGET_PROPERTY:COMPILE_OPTIONS>,INCLUDE,mcpu>)
+
+#add_custom_target(genexdebug COMMAND ${CMAKE_COMMAND} -E echo "$<FILTER:$<TARGET_PROPERTY:stm32-blinky-h7,COMPILE_OPTIONS>,INCLUDE,mcpu>")
+#get_target_property(options stm32-blinky-h7 LINK_OPTIONS)
+#message("Options = ${options}")
+
+include(print_target_properties)
+get_mcpu(mcpu stm32-blinky-h7)
+message("MCPU=${mcpu}")
+
+get_property(name TARGET stm32-blinky-h7 PROPERTY DEVICE_NAME)
+get_property(family TARGET stm32-blinky-h7 PROPERTY DEVICE_FAMILY_SHORT)
+message("Name = ${name} | Family = ${family}")
+
 #enable_option(stm32-blinky-h7 STM32H7_IO "DEBUG") # defines the symbol: "STM32H7_IO_USE_DEBUG"
 #set_configurable_option(stm32-blinky-h7 STM32H7_USBCDC DEVICE_NAME "My STM32")
