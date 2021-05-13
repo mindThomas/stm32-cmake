@@ -35,7 +35,7 @@ target_link_libraries(stm32-freertos
                               HAL::STM32::H7::M7::CORTEX
                               CMSIS::STM32::H743ZI::M7
                               STM32::NoSys
-                              STM32H7_PRECISION_SYSTICK
+        STM32H7_PrecisionSysTick
                               STM32H7_IO
                               STM32H7_USBCDC)
 target_compile_definitions(stm32-freertos PUBLIC HSE_VALUE=8000000)

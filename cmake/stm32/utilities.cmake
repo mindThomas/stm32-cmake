@@ -25,6 +25,8 @@ function(stm32_util_create_family_targets FAMILY)
                       -fno-exceptions #-nostartfiles -fno-rtti
                       -fno-common
                       -fmessage-length=0
+                      -fstack-usage
+                      #-fdump-ipa-cgraph # dump call graph
                       -Wall
                       #-Wall -Wextra -Wpedantic # Be extra verbose (throw more warning) when compiling
                       #-Werror # report all warnings as errors
@@ -40,7 +42,9 @@ function(stm32_util_create_family_targets FAMILY)
                             -Wl,--start-group
                             -lc
                             -lm
-                            -lnosys
+                            #-lnosys
+                            -lstdc++
+                            -lsupc++
                             -Wl,--end-group
                             -Wl,--cref
                             #$<$<CONFIG:Debug>:-Og>
@@ -49,12 +53,13 @@ function(stm32_util_create_family_targets FAMILY)
         target_compile_definitions(STM32::${FAMILY}${CORE_C}
                                    INTERFACE
                                    STM32${FAMILY}
+                                   "__weak=__attribute__((weak))"
+                                   "__packed=__attribute__((__packed__))"
                                    ARM_MATH_MATRIX_CHECK
                                    ARM_MATH_ROUNDING)
 
         if(${STRIP_UNUSED_CODE})
             target_compile_options(STM32::${FAMILY}${CORE_C} INTERFACE -ffunction-sections -fdata-sections)
-
             target_link_options(STM32::${FAMILY}${CORE_C} INTERFACE -Wl,--gc-sections)
         endif()
     endif()

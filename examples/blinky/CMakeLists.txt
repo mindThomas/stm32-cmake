@@ -31,7 +31,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../STM32-libraries stm32-librari
 # Find everything:
 #find_package(HAL REQUIRED)
 
-#include(${STM32_CMAKE_DIR}/info.cmake)
+include(${STM32_CMAKE_DIR}/info.cmake)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -95,6 +95,8 @@ target_link_libraries(stm32-blinky-h7
                       STM32H7_USBCDC)
 target_compile_definitions(stm32-blinky-h7 PUBLIC HSE_VALUE=8000000)
 
+#target_compile_definitions(stm32-blinky-h7 PUBLIC ARM_CPU=)
+
 #target_compile_definitions(
 #        stm32-blinky-h7 PUBLIC
 #        $<FILTER:$<TARGET_PROPERTY:COMPILE_OPTIONS>,INCLUDE,mcpu>)
@@ -104,6 +106,9 @@ target_compile_definitions(stm32-blinky-h7 PUBLIC HSE_VALUE=8000000)
 #message("Options = ${options}")
 
 include(print_target_properties)
+#get_propagated_target_properties(outlist stm32-blinky-h7 INTERFACE_COMPILE_OPTIONS)
+#message("${outlist}")
+
 get_mcpu(mcpu stm32-blinky-h7)
 message("MCPU=${mcpu}")
 
