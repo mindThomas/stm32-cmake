@@ -6,7 +6,7 @@ It is recommended that you create a project with CubeMX to generate processor co
  - `stm32xyzz_hal_msp.c`
  - `stm32xyzz_it.c`
  - `syscalls.c`
- 
+
 ## ARM Toolchain
 This project requires [CMake](https://cmake.org/download/) 3.15 or later and the [arm-none-eabi-gcc toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) to be installed seperately.
 This project was recently tested and used with the [GNU Arm Embedded Toolchain Version 7-2018-q2-update](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads/7-2018-q2-update).
@@ -52,7 +52,7 @@ for path in ${to_delete//:/ }; do rm -rf $path; done
 ```
 
 ## CMakeLists content
-Example with STM32G431CB device and FreeRTOS:
+Example with STM32G431CB device:
 ```
 cmake_minimum_required(VERSION 3.15)
 
@@ -194,7 +194,7 @@ stm32_fetch_hal(G4)
 ```
 
 ## Main code - LED blink example
-Example of `main.cpp` for project with STM32G431CB device and FreeRTOS to start a thread and blink an LED:
+Example of `main.cpp` for project with STM32G431CB device to blink an LED:
 ```
 #include "stm32g4xx_hal.h"
 
@@ -302,3 +302,96 @@ As a final step you need to add the FreeRTOS include file in the top:
 ```
 #include <FreeRTOS.h>
 ```
+
+## DFU Flashing
+A firmware can be flashed over UART or USB using the built in DFU bootloader of ST devices. For USB enabled devices `dfu-util` tool from http://dfu-util.sourceforge.net/dfuse.html can be used.
+
+### List connected devices
+
+Run the following command to list the connected DFU devices:
+
+`dfu-util -l`
+
+### Flashing the firmware
+
+To flash a firmware use the following command:
+
+`dfu-util -a 0 -i 0 -s 0x08000000:leave -D firmware.bin`
+
+### Getting out of DFU
+
+Ideally one should be able to use the command:
+
+`dfu-util -a 0 -e -R`
+
+But it is not always that it works. Alternatively the `dfu-tool` can be used by running:
+
+`dfu-tool attach`
+
+If none of the above commands work (experienced with the STM32F4 Blackpill board) a last resort is to trick the STM32 into resetting by flashing 0 bytes:
+
+```
+touch null.bin
+dfu-util -a 0 -i 0 -s 0x08000001:leave -D null.bin
+```
+
+
+
+
+
+## Debugging in CLion
+Debugging with an ST-Link can be done with CLion in 3 different ways:
+1. OpenOCD using bundled OpenOCD (simplest): https://www.jetbrains.com/help/clion/openocd-support.html
+2. Using open source `st-util` GDB server: https://github.com/stlink-org/stlink
+3. Using ST-LINK GDB server: https://nicolai86.eu/blog/2020/08/on-chip-debugging-stm32/
+
+### Bundled OpenOCD
+This is by far the easiest option as it just requires you to create an `OpenOCD Download & Run` debug configuration in CLion and configure it as follows:
+1. Set the target and executable to your firmware
+2. Set the GDB to `Bundled GDB`
+3. Set the Download executable to `Always`.
+4. Select the auto-generate OpenOCD Board config file
+5. Set Download to `Updated Only`
+6. Set Reset to `Halt`
+
+### Open Source `st-util` GDB server
+Alternatively the open source `st-util` can be used as GDB server. To do so you should create an `Embedded GDB Server` debug configuration in CLion instead.
+
+Clone the `stlink` repo from and build it by doing:
+```
+git clone https://github.com/stlink-org/stlink
+cd stlink
+git checkout develop
+make clean
+make release
+```
+Now you will have the `st-util` in `stlink/build/Release/bin`.
+
+In the CLion debug config do the following:
+1. Set the GDB to `Bundled GDB`
+2. Set the Download executable to `Always`.
+3. Set the GDB Server to the `st-util` binary
+4. Set the `target remote` args to: `localhost:4242`
+
+Hint: If you are struggling with breakpoints not getting hit make sure that you don't have too many (max 6 breakpoints) and make sure that your firmware was flashed. If your debug configuration is set to `Download executable: Updated Only` and the upload fails, CLion might think that the firmware has been uploaded and whenever you start a new debug session it won't reupload. So a general advice is to set the Download executable to `Always`.
+
+### ST-LINK GDB server
+This requires an existing installation of STM32CubeIDE.
+Find the installation folder and find the `stlink-gdb-server` subfolder under plugins. Note this as `GDB_SERVER_PATH`.
+Next find the `cubeprogrammer` subfolder also under plugins. Note this as `CUBE_PROGRAMMER_PATH`.
+Create a GDB server launch script as `stlink_gdb_launch.sh`:
+```
+#!/bin/sh
+GDB_SERVER_PATH=~/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_1.6.0.202101291314/tools/bin
+CUBE_PROGRAMMER_PATH=~/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.linux64_1.4.0.202007081208/tools/bin
+
+PATH=$PATH:$GDB_SERVER_PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GDB_SERVER_PATH/native/linux_x64/
+
+ST-LINK_gdbserver -e -f debug.log -p 61234 -r 15 -d -cp $CUBE_PROGRAMMER_PATH
+```
+Finally create an `Embedded GDB Server` configuration in CLion where you:
+1. Use `Bundled GDB`
+2. Set the Download executable to `Always`.
+3. Set `target remote` args to: `localhos:61234`
+4. Set the GDB Server to the `stlink_gdb_launch.sh` script
