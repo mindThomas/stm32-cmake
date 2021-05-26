@@ -26,8 +26,7 @@ _Min_Stack_Size = ${STACK_SIZE};\n\
 MEMORY\n\
 {\n\
     FLASH (rx)      : ORIGIN = ${FLASH_ORIGIN}, LENGTH = ${FLASH_SIZE}\n\
-    RAM (xrw)      : ORIGIN = ${RAM_ORIGIN}, LENGTH = ${RAM_SIZE}\n\
-${CCRAM_DEFINITION}\n\
+    RAM (xrw)      : ORIGIN = ${RAM_ORIGIN}, LENGTH = ${RAM_SIZE}\n${CCRAM_DEFINITION}\
 }\n\
 \n\
 SECTIONS\n\
@@ -47,6 +46,7 @@ SECTIONS\n\
     *(.glue_7)\n\
     *(.glue_7t)\n\
     *(.eh_frame)\n\
+    *(.data.__global_locale) /* move newlib locale into FLASH. See https://bugs.launchpad.net/gcc-arm-embedded/+bug/1686067 */\n\
 \n\
     KEEP (*(.init))\n\
     KEEP (*(.fini))\n\

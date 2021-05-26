@@ -13,7 +13,7 @@
 
 void blinky(void *arg)
 {
-    USBCDC usb;
+    USBCDC * usb = new USBCDC;
 
     for(;;)
     {

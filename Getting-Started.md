@@ -110,9 +110,10 @@ stm32_add_startup_script(firmware relpath/to/startup_stm32xyyyzz.s)
 ```
 
 ### Enable C++ usage = syscalls (new, malloc etc.)
-To use malloc, free, new and other system libraries an implementation of the syscalls functions and the memory block allocation function `_sbrk` has to be given. A default implementation can be used by linking against:
+To use malloc, free, new and other system libraries an implementation of the Syscalls functions and the memory block allocation function `_sbrk` has to be given. A default implementation can be used by linking against:
 ```
 Syscalls
+Sysmem
 ```
 Alternatively the bigger suite of C/C++ libraries can be included with:
 ```
@@ -267,7 +268,28 @@ FreeRTOS::Timers
 FreeRTOS::Heap::4 # use the Heap 4 type with FreeRTOS (generally recommended)
 ```
 
+However if you want to use printf/sprintf you will have to use the Newlib and it is strongly adviced to link against the following:
+
+```
+STM32::Nano
+FreeRTOS::Heap::Newlib
+Syscalls
+```
+
+In this case you will NOT need to link against the `Sysmem` library only `Syscalls`.
+
+
+
+It is also adviced to add FreeRTOS OpenOCD debug information by linking against:
+
+```
+FreeRTOS_OpenOCD
+```
+
+
+
 Now replace the main function with the following:
+
 ```
 void testTask(void *arg)
 {
@@ -380,10 +402,11 @@ This requires an existing installation of STM32CubeIDE.
 Find the installation folder and find the `stlink-gdb-server` subfolder under plugins. Note this as `GDB_SERVER_PATH`.
 Next find the `cubeprogrammer` subfolder also under plugins. Note this as `CUBE_PROGRAMMER_PATH`.
 Create a GDB server launch script as `stlink_gdb_launch.sh`:
+
 ```
 #!/bin/sh
-GDB_SERVER_PATH=~/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_1.6.0.202101291314/tools/bin
-CUBE_PROGRAMMER_PATH=~/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.linux64_1.4.0.202007081208/tools/bin
+GDB_SERVER_PATH=~/st/stm32cubeide_1.6.0/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_1.6.0.202101291314/tools/bin
+CUBE_PROGRAMMER_PATH=~/st/stm32cubeide_1.6.0/plugins/com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.linux64_1.6.0.202101291314/tools/bin
 
 PATH=$PATH:$GDB_SERVER_PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GDB_SERVER_PATH/native/linux_x64/
@@ -393,5 +416,14 @@ ST-LINK_gdbserver -e -f debug.log -p 61234 -r 15 -d -cp $CUBE_PROGRAMMER_PATH
 Finally create an `Embedded GDB Server` configuration in CLion where you:
 1. Use `Bundled GDB`
 2. Set the Download executable to `Always`.
-3. Set `target remote` args to: `localhos:61234`
+3. Set `target remote` args to: `localhost:61234`
 4. Set the GDB Server to the `stlink_gdb_launch.sh` script
+
+### Upgrade ST-Link firmware
+This requires an existing installation of STM32CubeIDE.
+Find the installation folder and find the `stlink-gdb-server` subfolder which was noted as `GDB_SERVER_PATH` above. Now launch the upgrade tool with:
+
+```
+java -jar $GDB_SERVER_PATH/STLinkUpgrade.jar
+```
+
